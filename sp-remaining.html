@@ -1,11 +1,134 @@
 <html lang="en">
   <head>
     <title>Coma SP Remaining</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/uikit@3.21.13/dist/css/uikit.min.css"
+    />
   </head>
   <body>
-    <h1>Hi</h1>
+    <div class="uk-container uk-margin-top">
+      <h1>SP remaining for Omega</h1>
+      <form>
+        <fieldset class="uk-fieldset">
+          <label for="expiry">Omega Expiry</label>
+          <div class="uk-margin">
+            <input class="uk-input" name="expiry" type="datetime-local" />
+          </div>
+
+          <div class="uk-margin">
+            <label for="sp-per-min">SP Per Min</label>
+            <input
+              type="number"
+              list="amounts"
+              name="sp-per-min"
+              class="uk-input"
+            />
+            <datalist id="amounts">
+              <option value="45">+5s</option>
+              <option value="42">+3s</option>
+              <option value="57">+5s and drug</option>
+            </datalist>
+          </div>
+
+          <div class="uk-margin">
+            <label for="sp-per-min">Timezone adjustment</label>
+            <input
+              type="number"
+              name="timezone-adjustment"
+              class="uk-input"
+              value="-6"
+            />
+          </div>
+        </fieldset>
+      </form>
+    </div>
+
+    <div class="uk-container uk-margin-top">
+      <dl class="uk-description-list">
+        <dt>Hours Left</dt>
+        <dd id="hours-left"></dd>
+
+        <dt>SP Left</dt>
+        <dd id="sp-left"></dd>
+
+        <dt>How much SP should you have for one more LSI</dt>
+        <dd id="one-more-lsi" class="uk-text-lead"></dd>
+      </dl>
+    </div>
+
     <script type="text/javascript">
-      console.log("yes");
+      const expiryElem = document.querySelector('input[name="expiry"]');
+      const spPerMinElem = document.querySelector('input[name="sp-per-min"]');
+      const timezoneAdjustmentElem = document.querySelector(
+        'input[name="timezone-adjustment"]'
+      );
+
+      const spLeftElem = document.getElementById("sp-left");
+      const hoursLeftElem = document.getElementById("hours-left");
+      const oneMoreLsiElem = document.getElementById("one-more-lsi");
+
+      function update() {
+        localStorage.setItem('name="expiry"', expiryElem.value);
+        localStorage.setItem('name="sp-per-min"', spPerMinElem.value);
+        localStorage.setItem(
+          'name="timezone-adjustment"',
+          timezoneAdjustmentElem.value
+        );
+
+        try {
+          const expiry = new Date(expiryElem.value);
+          if (!(expiry instanceof Date && !isNaN(expiry))) {
+            return;
+          }
+
+          const spPerMin = parseInt(spPerMinElem.value);
+          if (isNaN(spPerMin)) {
+            return;
+          }
+
+          const timezoneAdjustment = parseInt(timezoneAdjustmentElem.value);
+          if (isNaN(timezoneAdjustment)) {
+            return;
+          }
+
+          // everything must be valid, let's crack on
+          expiry.setHours(expiry.getHours() + timezoneAdjustment);
+          const timeLeftHours = (expiry - Date.now()) / 1000 / 60 / 60;
+          const spLeft = timeLeftHours * spPerMin * 60;
+
+          console.log({
+            expiry,
+            spPerMin,
+            timezoneAdjustment,
+            timeLeftHours,
+            spLeft,
+          });
+          spLeftElem.innerText = spLeft.toLocaleString();
+          hoursLeftElem.innerText = timeLeftHours.toLocaleString();
+          oneMoreLsiElem.innerText = (5_500_000 - spLeft).toLocaleString();
+        } catch (e) {
+          console.log("probably handled error", e);
+        }
+      }
+
+      if (localStorage.getItem('name="expiry"')) {
+        expiryElem.value = localStorage.getItem('name="expiry"');
+      }
+      if (localStorage.getItem('name="sp-per-min"')) {
+        spPerMinElem.value = localStorage.getItem('name="sp-per-min"');
+      }
+      if (localStorage.getItem('name="timezone-adjustment"')) {
+        timezoneAdjustmentElem.value = localStorage.getItem(
+          'name="timezone-adjustment"'
+        );
+      }
+
+      expiryElem.addEventListener("change", update);
+      spPerMinElem.addEventListener("change", update);
+      timezoneAdjustmentElem.addEventListener("change", update);
+
+      update();
     </script>
   </body>
 </html>
